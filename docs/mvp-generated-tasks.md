@@ -9,9 +9,7 @@ Priority: Critical | Timeline: 2-3 weeks
 
 - [x] Initialize Python project with Poetry dependency management
 - [x] Set up project structure with proper modules (agents/, models/, services/, utils/)
-- [ ] Configure development environment with Docker and docker-compose
-- [ ] Set up pre-commit hooks and code formatting (black, flake8, mypy)
-- [ ] Create initial configuration management system (environment variables, settings)
+- [ ] Create initial configuration management system (environment variables, settings) (In Progress)
 
 ### Task 0.2: Ollama Integration
 
@@ -89,6 +87,8 @@ Priority: High | Timeline: 1-2 weeks | Dependencies: MVP-0
 
 Task 1.6: CI/CD Pipeline Setup
 
+- [ ] Configure development environment with Docker and docker-compose
+- [ ] Set up pre-commit hooks and code formatting (black, flake8, mypy) (Optional)
 - [ ] Configure GitHub Actions or GitLab CI for automated testing
 - [ ] Set up automated testing pipeline (unit, integration, e2e tests)
 - [ ] Implement code quality checks (linting, type checking, security scanning)
