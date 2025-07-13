@@ -5,7 +5,7 @@ Important note: This is initial MVP structure that can be changed during the pro
 ## MVP-0: Core Infrastructure (Foundation Layer)
 Priority: Critical | Timeline: 2-3 weeks
 
-### Task 1: Project Setup and Environment
+### Task 0.1: Project Setup and Environment
 
 - [ ] Initialize Python project with Poetry dependency management
 - [ ] Set up project structure with proper modules (agents/, models/, services/, utils/)
@@ -13,7 +13,7 @@ Priority: Critical | Timeline: 2-3 weeks
 - [ ] Set up pre-commit hooks and code formatting (black, flake8, mypy)
 - [ ] Create initial configuration management system (environment variables, settings)
 
-### Task 2: Ollama Integration
+### Task 0.2: Ollama Integration
 
 - [ ] Install and configure Ollama locally
 - [ ] Create LLM wrapper class for Ollama API communication
@@ -21,7 +21,7 @@ Priority: Critical | Timeline: 2-3 weeks
 - [ ] Add error handling for model unavailability
 - [ ] Create simple LLM response testing utilities
 
-### Task 3: Basic FastAPI Server
+### Task 0.3: Basic FastAPI Server
 
 - [ ] Set up FastAPI application with proper project structure
 - [ ] Create health check endpoints (/health, /status)
@@ -29,7 +29,7 @@ Priority: Critical | Timeline: 2-3 weeks
 - [ ] Add request/response logging middleware
 - [ ] Configure CORS and basic security headers
 
-### Task 4: Redis Setup and Session Management
+### Task 0.4: Redis Setup and Session Management
 
 - [ ] Configure Redis connection and connection pooling
 - [ ] Create session management utilities
@@ -37,7 +37,7 @@ Priority: Critical | Timeline: 2-3 weeks
 - [ ] Add Redis health checks and monitoring
 - [ ] Create session cleanup and expiration handling
 
-### Task 5: Logging and Configuration
+### Task 0.5: Logging and Configuration
 
 - [ ] Implement structured logging with JSON formatting
 - [ ] Create configuration classes for different environments
@@ -47,7 +47,7 @@ Priority: Critical | Timeline: 2-3 weeks
 
 ## MVP-1: Basic Chat Interface (Telegram Integration)
 Priority: High | Timeline: 1-2 weeks | Dependencies: MVP-0
-### Task 6: Telegram Bot Setup
+### Task 1.1: Telegram Bot Setup
 
 - [ ] Create Telegram bot using BotFather
 - [ ] Install and configure python-telegram-bot library
@@ -55,7 +55,7 @@ Priority: High | Timeline: 1-2 weeks | Dependencies: MVP-0
 - [ ] Add bot command handlers (/start, /help, /status)
 - [ ] Create bot error handling and logging
 
-### Task 7: Message Handling and Routing
+### Task 1.2: Message Handling and Routing
 
 - [ ] Implement message parsing and validation
 - [ ] Create message routing system for different message types
@@ -63,7 +63,7 @@ Priority: High | Timeline: 1-2 weeks | Dependencies: MVP-0
 - [ ] Implement message queuing for high-volume scenarios
 - [ ] Add rate limiting and spam protection
 
-### Task 8: Basic Supervisor Agent
+### Task 1.3: Basic Supervisor Agent
 
 - [ ] Create base Agent class with standard interface
 - [ ] Implement SupervisorAgent with basic routing logic
@@ -71,7 +71,7 @@ Priority: High | Timeline: 1-2 weeks | Dependencies: MVP-0
 - [ ] Create simple response generation pipeline
 - [ ] Implement basic conversation memory (in-memory)
 
-### Task 9: Conversation Context Management
+### Task 1.4: Conversation Context Management
 
 - [ ] Design conversation context data structure
 - [ ] Implement context window management (token limits)
@@ -79,7 +79,7 @@ Priority: High | Timeline: 1-2 weeks | Dependencies: MVP-0
 - [ ] Create context retrieval and updating mechanisms
 - [ ] Implement context cleanup and garbage collection
 
-### Task 10: End-to-End Integration Testing
+### Task 1.5: End-to-End Integration Testing
 
 - [ ] Create integration tests for Telegram → FastAPI → Ollama flow
 - [ ] Implement automated testing for bot responses
@@ -87,9 +87,22 @@ Priority: High | Timeline: 1-2 weeks | Dependencies: MVP-0
 - [ ] Create user acceptance testing scenarios
 - [ ] Set up continuous integration pipeline
 
+Task 1.6: CI/CD Pipeline Setup
+
+- [ ] Configure GitHub Actions or GitLab CI for automated testing
+- [ ] Set up automated testing pipeline (unit, integration, e2e tests)
+- [ ] Implement code quality checks (linting, type checking, security scanning)
+- [ ] Create automated Docker image building and tagging
+- [ ] Set up staging environment deployment automation
+- [ ] Configure production deployment pipeline with manual approval
+- [ ] Implement rollback mechanisms and health checks
+- [ ] Add automated dependency vulnerability scanning
+- [ ] Create deployment notifications and monitoring alerts
+- [ ] Set up automated backup verification in CI pipeline
+
 ## MVP-2: Persistent Storage (Data Foundation)
 Priority: High | Timeline: 2-3 weeks | Dependencies: MVP-1
-### Task 11: Supabase Database Setup
+### Task 2.1: Supabase Database Setup
 
 - [ ] Create Supabase project and configure database
 - [ ] Design database schema for users, sessions, conversations
@@ -97,7 +110,7 @@ Priority: High | Timeline: 2-3 weeks | Dependencies: MVP-1
 - [ ] Set up database connection pooling
 - [ ] Configure database backup and recovery
 
-### Task 12: Core Data Models
+### Task 2.2: Core Data Models
 
 - [ ] Create SQLAlchemy models for User, Session, Conversation
 - [ ] Implement basic CRUD operations for each model
@@ -105,7 +118,7 @@ Priority: High | Timeline: 2-3 weeks | Dependencies: MVP-1
 - [ ] Create database indexes for performance
 - [ ] Implement soft delete and audit trails
 
-### Task 13: User Management System
+### Task 2.3: User Management System
 
 - [ ] Implement user registration and authentication
 - [ ] Create user profile management
@@ -113,7 +126,7 @@ Priority: High | Timeline: 2-3 weeks | Dependencies: MVP-1
 - [ ] Implement user session management
 - [ ] Add user privacy and data protection features
 
-### Task 14: Persistent Conversation History
+### Task 2.4: Persistent Conversation History
 
 - [ ] Migrate conversation context from Redis to Supabase
 - [ ] Implement conversation history retrieval
@@ -121,7 +134,7 @@ Priority: High | Timeline: 2-3 weeks | Dependencies: MVP-1
 - [ ] Create conversation export functionality
 - [ ] Implement conversation data retention policies
 
-### Task 15: Data Integrity and Backup
+### Task 2.5: Data Integrity and Backup
 
 - [ ] Implement data validation and integrity checks
 - [ ] Create automated backup procedures
@@ -131,7 +144,7 @@ Priority: High | Timeline: 2-3 weeks | Dependencies: MVP-1
 
 ## MVP-3: Basic Knowledge Management
 Priority: Medium-High | Timeline: 3-4 weeks | Dependencies: MVP-2
-### Task 16: File System Integration
+### Task 3.1: File System Integration
 
 - [ ] Create secure file system access layer
 - [ ] Implement file reading and writing utilities
@@ -139,7 +152,7 @@ Priority: Medium-High | Timeline: 3-4 weeks | Dependencies: MVP-2
 - [ ] Create file monitoring for changes
 - [ ] Implement file backup and versioning
 
-### Task 17: Obsidian Vault Integration
+### Task 3.2: Obsidian Vault Integration
 
 - [ ] Create Obsidian vault parser and reader
 - [ ] Implement markdown file processing
@@ -147,7 +160,7 @@ Priority: Medium-High | Timeline: 3-4 weeks | Dependencies: MVP-2
 - [ ] Create vault structure analysis
 - [ ] Implement vault synchronization mechanisms
 
-### Task 18: Basic Search and Indexing
+### Task 3.3: Basic Search and Indexing
 
 - [ ] Implement full-text search for notes and documents
 - [ ] Create search indexing pipeline
@@ -155,7 +168,7 @@ Priority: Medium-High | Timeline: 3-4 weeks | Dependencies: MVP-2
 - [ ] Implement search filters and advanced queries
 - [ ] Create search performance optimization
 
-### Task 19: Note Creation and Management
+### Task 3.4: Note Creation and Management
 
 - [ ] Implement note creation through chat interface
 - [ ] Add note updating and editing capabilities
@@ -163,7 +176,7 @@ Priority: Medium-High | Timeline: 3-4 weeks | Dependencies: MVP-2
 - [ ] Implement note templates and formatting
 - [ ] Add note sharing and collaboration features
 
-### Task 20: Basic MCP Server for Files
+### Task 3.5: Basic MCP Server for Files
 
 - [ ] Implement MCP server for file operations
 - [ ] Create file operation tools (read, write, search)
