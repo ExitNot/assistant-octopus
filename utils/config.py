@@ -9,6 +9,8 @@ load_dotenv()
 
 class Settings(BaseSettings):
     ollama_api_url: AnyUrl = Field(..., env="OLLAMA_API_URL")
+    telegram_bot_token: str = Field(..., env="TELERGRAM_BOT_TOKEN")
+    supervisor_api_url: AnyUrl = Field(..., env="SUPERVISOR_API_URL")
 
     class Config:
         env_file = ".env"
