@@ -57,13 +57,16 @@ Priority: High | Timeline: 1-2 weeks | Dependencies: MVP-0
 - [ ] Add bot command handlers (/start, /help, /status)
 - [ ] Create bot error handling and logging
 
-### Task 1.2: Message Handling and Routing
+### Task 1.2: Messaging Service Implementation (ADR-01)
 
-- [ ] Implement message parsing and validation
-- [ ] Create message routing system for different message types
-- [ ] Add support for text messages, commands, and basic formatting
-- [ ] Implement message queuing for high-volume scenarios
-- [ ] Add rate limiting and spam protection
+- [x] Implement Job and Message models (ADR-01 Core Models)
+- [ ] Create JobQueue interface and InMemoryJobQueue implementation
+- [ ] Implement WorkerPool with configurable workers
+- [ ] Create MessagingService facade
+- [ ] Add job persistence and recovery mechanisms
+- [ ] Implement priority queuing and status tracking
+- [ ] Add retry mechanism and error handling
+- [ ] Create message routing system for different job types
 
 ### Task 1.3: Basic Supervisor Agent
 
