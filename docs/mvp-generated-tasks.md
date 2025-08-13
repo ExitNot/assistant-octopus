@@ -28,13 +28,13 @@ Priority: Critical | Timeline: 2-3 weeks
 - [ ] Add request/response logging middleware
 - [ ] ~~Configure CORS and basic security headers~~ (postponed)
 
-### Task 0.4: Redis Setup and Session Management
+### Task 0.4: Redis Setup and Session Management - postponed to moment when needed
 
-- [ ] Configure Redis connection and connection pooling
-- [ ] Create session management utilities
-- [ ] Implement basic caching layer for LLM responses
-- [ ] Add Redis health checks and monitoring
-- [ ] Create session cleanup and expiration handling
+- [-] Configure Redis connection and connection pooling
+- [-] Create session management utilities
+- [-] Implement basic caching layer for LLM responses
+- [-] Add Redis health checks and monitoring
+- [-] Create session cleanup and expiration handling
 
 ### Task 0.5: Logging and Configuration
 
