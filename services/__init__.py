@@ -1,5 +1,6 @@
 from fastapi import APIRouter, HTTPException, status
-from .supervisor_router import supervisor_router
+from .supervisor import supervisor_router
+from .llm import OllamaClient
 
 planning_router = APIRouter(prefix="/planning", tags=["Planning"])
 knowledge_router = APIRouter(prefix="/knowledge", tags=["Knowledge"])
