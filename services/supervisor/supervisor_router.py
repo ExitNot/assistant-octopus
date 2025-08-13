@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException, Request, status
 from pydantic import BaseModel
-from services.ollama_llm import OllamaClient, OllamaAPIError
+from services.llm.ollama_llm import OllamaClient, OllamaAPIError
 from typing import Optional, Dict
 
 # In-memory conversation store (for MVP, not production)
