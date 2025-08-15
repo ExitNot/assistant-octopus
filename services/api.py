@@ -6,6 +6,7 @@ from services import (
     knowledge_router,
     habit_router,
     notification_router,
+    messaging_router,
 )
 
 app = FastAPI(title="Assistant Octopus API")
@@ -22,4 +23,5 @@ app.include_router(supervisor_router)
 app.include_router(planning_router)
 app.include_router(knowledge_router)
 app.include_router(habit_router)
-app.include_router(notification_router) 
+app.include_router(notification_router)
+app.include_router(messaging_router) 

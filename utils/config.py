@@ -11,6 +11,14 @@ class Settings(BaseSettings):
     ollama_api_url: AnyUrl = Field(..., env="OLLAMA_API_URL")
     telegram_bot_token: str = Field(..., env="TELERGRAM_BOT_TOKEN")
     supervisor_api_url: AnyUrl = Field(..., env="SUPERVISOR_API_URL")
+    
+    # Messaging Service Configuration
+    messaging_backup_file: str = Field(default="jobs_backup.json", env="MESSAGING_BACKUP_FILE")
+    messaging_max_retries: int = Field(default=3, env="MESSAGING_MAX_RETRIES")
+    messaging_backup_interval: int = Field(default=60, env="MESSAGING_BACKUP_INTERVAL")
+    
+    # Job Queue Configuration
+    job_queue_priority_enabled: bool = Field(default=True, env="JOB_QUEUE_PRIORITY_ENABLED")
 
     class Config:
         env_file = ".env"
