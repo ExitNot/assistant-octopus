@@ -75,7 +75,13 @@ class Job:
     
     def to_dict(self) -> Dict[str, Any]:
         """Convert job to dictionary for serialization"""
-        return asdict(self)
+        data = asdict(self)
+        # Convert enum values to their string representations
+        if isinstance(data.get('status'), JobStatus):
+            data['status'] = data['status'].value
+        if isinstance(data.get('priority'), JobPriority):
+            data['priority'] = data['priority'].value
+        return data
     
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> 'Job':
