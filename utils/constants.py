@@ -8,6 +8,7 @@ MISTRAL_3_2 = 'mistralai/mistral-small-3.2-24b-instruct:free'
 SDXL = 'stabilityai/sdxl-turbo:free'
 INF = 'ByteDance/InfiniteYou:free'
 CHROMA = 'lodestones/Chroma:free'
+IMG_TEST = 'test/test'
 
 # API urls
 OR_API = "https://openrouter.ai/api/v1"
