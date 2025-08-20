@@ -1,8 +1,8 @@
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import ContextTypes, MessageHandler, filters, Application, CommandHandler, CallbackQueryHandler
 from services.image.image_service import ImageService
+from services.image.image_model import ImageGenerationProvider
 from utils.config import get_settings
-from utils.constants import IMAGE_API
 import httpx
 import logging
 from typing import Dict, Any
@@ -13,10 +13,7 @@ settings = get_settings()
 SUPERVISOR_API_URL = str(settings.supervisor_api_url).rstrip("/")
 
 # Initialize ImageService
-image_service = ImageService(
-    api_key=settings.image_router_api_key,
-    base_url=IMAGE_API
-)
+image_service = ImageService()
 
 # Store user image generation sessions
 user_sessions: Dict[str, Dict[str, Any]] = {}
@@ -66,37 +63,25 @@ async def handle_image_command(update: Update, context: ContextTypes.DEFAULT_TYP
     if len(command_parts) < 2:
         # Show help message
         help_text = """🎨 *Image Generation Command*
+        *Usage:* `/img <prompt>`
 
-*Usage:* `/img <prompt>`
+        *Examples:*
+        • `/img a beautiful sunset`
+        • `/img a cat playing with yarn`
+        • `/img portrait of a robot`
 
-*Examples:*
-• `/img a beautiful sunset`
-• `/img a cat playing with yarn`
-• `/img portrait of a robot`
-
-After entering your prompt, you'll be guided through:
-1. Model selection
-2. Size and quality settings
-3. Image generation
-
-*Available Models:*
-• `sdxl` - Fast generation, good quality
-• `inf` - InfiniteYou model  
-• `chroma` - Chroma model
-• `test` - Test model
-
-*Available Sizes:*
-• `256x256`, `512x512`, `1024x1024`
-• `1792x1024`, `1024x1792`
-
-*Available Qualities:*
-• `auto`, `low`, `medium`, `high`"""
+        After entering your prompt, you'll be guided through:
+        1. Provider selection
+        2. Model selection
+        3. Size and quality settings
+        4. Image generation
+        """
         
         await update.message.reply_text(help_text, parse_mode='Markdown')
         return
     
     # Extract prompt
-    prompt = command_parts[1]
+    prompt = update.message.text.replace("/img", "", 1)
     
     # Create user session
     user_id = str(update.effective_user.id)
@@ -104,24 +89,95 @@ After entering your prompt, you'll be guided through:
     
     user_sessions[session_id] = {
         "prompt": prompt,
+        "provider": None,
         "model": None,
         "size": None,
         "quality": None,
-        "step": "model_selection"
+        "step": "provider_selection"
     }
     
     # Show model selection
-    await show_model_selection(update, context, session_id)
+    await show_provider_selection(update, context, session_id)
+
+async def show_provider_selection(update: Update, context: ContextTypes.DEFAULT_TYPE, session_id: str) -> None:
+    """Show provider selection buttons."""
+    session = user_sessions.get(session_id)
+    if not session:
+        # Handle both message updates and callback queries for error messages
+        if update.callback_query:
+            await update.callback_query.edit_message_text("❌ Session expired. Please use /img again.")
+        elif update.message:
+            await update.message.reply_text("❌ Session expired. Please use /img again.")
+        return
+    
+    prompt = session["prompt"]
+    providers = image_service.get_supported_providers()
+
+    # Create provider selection buttons
+    keyboard = []
+    for provider in providers:
+        # Extract provider name for display
+        provider_display = provider.name
+        keyboard.append([InlineKeyboardButton(
+            provider_display, 
+            callback_data=f"provider:{session_id}:{provider.value}"
+        )])
+    
+    # Add cancel button
+    keyboard.append([InlineKeyboardButton("❌ Cancel", callback_data=f"cancel:{session_id}")])
+    
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    
+    # Handle both message updates and callback queries
+    if update.callback_query:
+        await update.callback_query.edit_message_text(
+            f"🎨 *Image Generation Setup*\n\n"
+            f"*Prompt:* {prompt}\n\n"
+            f"*Step 1: Select a provider*",
+            reply_markup=reply_markup,
+            parse_mode='Markdown'
+        )
+    elif update.message:
+        await update.message.reply_text(
+            f"🎨 *Image Generation Setup*\n\n"
+            f"*Prompt:* {prompt}\n\n"
+            f"*Step 1: Select a provider*",
+            reply_markup=reply_markup,
+            parse_mode='Markdown'
+        )
 
 async def show_model_selection(update: Update, context: ContextTypes.DEFAULT_TYPE, session_id: str) -> None:
     """Show model selection buttons."""
     session = user_sessions.get(session_id)
     if not session:
-        await update.message.reply_text("❌ Session expired. Please use /img again.")
+        # Handle both message updates and callback queries for error messages
+        if update.callback_query:
+            await update.callback_query.edit_message_text("❌ Session expired. Please use /img again.")
+        elif update.message:
+            await update.message.reply_text("❌ Session expired. Please use /img again.")
         return
     
     prompt = session["prompt"]
+    provide_name = session.get("provider")
+    if not provide_name:
+        # Handle both message updates and callback queries for error messages
+        if update.callback_query:
+            await update.callback_query.edit_message_text("❌ No provider selected. Please use /img again.")
+        elif update.message:
+            await update.message.reply_text("❌ No provider selected. Please use /img again.")
+        return
+    image_service.with_provider(provide_name)
+
+    # Get the provider client for the selected provider
     models = image_service.get_supported_models()
+    if models == None:
+        # Handle both message updates and callback queries for error messages
+        if update.callback_query:
+            await update.callback_query.edit_message_text("❌ No provider client found. Please use /img again.")
+        elif update.message:
+            await update.message.reply_text("❌ No provider client found. Please use /img again.")
+        return
+
     
     # Create model selection buttons
     keyboard = []
@@ -138,24 +194,52 @@ async def show_model_selection(update: Update, context: ContextTypes.DEFAULT_TYP
     
     reply_markup = InlineKeyboardMarkup(keyboard)
     
-    await update.message.reply_text(
-        f"🎨 *Image Generation Setup*\n\n"
-        f"*Prompt:* {prompt}\n\n"
-        f"*Step 1: Select a model*",
-        reply_markup=reply_markup,
-        parse_mode='Markdown'
-    )
+    # Handle both message updates and callback queries
+    if update.callback_query:
+        await update.callback_query.edit_message_text(
+            f"🎨 *Image Generation Setup*\n\n"
+            f"*Prompt:* {prompt}\n\n"
+            f"*Step 2: Select a model*",
+            reply_markup=reply_markup,
+            parse_mode='Markdown'
+        )
+    elif update.message:
+        await update.message.reply_text(
+            f"🎨 *Image Generation Setup*\n\n"
+            f"*Prompt:* {prompt}\n\n"
+            f"*Step 2: Select a model*",
+            reply_markup=reply_markup,
+            parse_mode='Markdown'
+        )
 
 async def show_size_selection(update: Update, context: ContextTypes.DEFAULT_TYPE, session_id: str) -> None:
     """Show size selection buttons."""
     session = user_sessions.get(session_id)
     if not session:
+        # Handle both message updates and callback queries for error messages
+        if update.callback_query:
+            await update.callback_query.edit_message_text("❌ Session expired. Please use /img again.")
+        elif update.message:
+            await update.message.reply_text("❌ Session expired. Please use /img again.")
         return
-    
+    provide_name = session.get("provider")
+    if not provide_name:
+        # Handle both message updates and callback queries for error messages
+        if update.callback_query:
+            await update.callback_query.edit_message_text("❌ No provider selected. Please use /img again.")
+        elif update.message:
+            await update.message.reply_text("❌ No provider selected. Please use /img again.")
+        return
+    image_service.with_provider(provide_name)
     prompt = session["prompt"]
     model = session["model"]
     
-    sizes = image_service.get_supported_sizes()
+    sizes = image_service.get_supported_sizes(model)
+    # If sizes are not supported, skip to quality selection
+    if not sizes:
+        user_sessions[session_id]["step"] = "quality_selection"
+        await show_quality_selection(update, context, session_id)
+        return
     
     # Create size selection buttons
     keyboard = []
@@ -164,6 +248,9 @@ async def show_size_selection(update: Update, context: ContextTypes.DEFAULT_TYPE
             size, 
             callback_data=f"size:{session_id}:{size}"
         )])
+    
+    # Add skip button
+    keyboard.append([InlineKeyboardButton("➡️ Skip size (use default)", callback_data=f"skip_size:{session_id}")])
     
     # Add back and cancel buttons
     keyboard.append([
@@ -188,13 +275,32 @@ async def show_quality_selection(update: Update, context: ContextTypes.DEFAULT_T
     """Show quality selection buttons."""
     session = user_sessions.get(session_id)
     if not session:
+        # Handle both message updates and callback queries for error messages
+        if update.callback_query:
+            await update.callback_query.edit_message_text("❌ Session expired. Please use /img again.")
+        elif update.message:
+            await update.message.reply_text("❌ Session expired. Please use /img again.")
         return
-    
+    provide_name = session.get("provider")
+    if not provide_name:
+        # Handle both message updates and callback queries for error messages
+        if update.callback_query:
+            await update.callback_query.edit_message_text("❌ No provider selected. Please use /img again.")
+        elif update.message:
+            await update.message.reply_text("❌ No provider selected. Please use /img again.")
+        return
+    image_service.with_provider(provide_name)
+
     prompt = session["prompt"]
     model = session["model"]
     size = session["size"]
     
-    qualities = image_service.get_supported_qualities()
+    qualities = image_service.get_supported_qualities(model)
+    # If qualities are not supported, skip to final confirmation
+    if not qualities:
+        user_sessions[session_id]["step"] = "confirmation"
+        await show_final_confirmation(update, context, session_id)
+        return
     
     # Create quality selection buttons
     keyboard = []
@@ -205,6 +311,9 @@ async def show_quality_selection(update: Update, context: ContextTypes.DEFAULT_T
             callback_data=f"quality:{session_id}:{quality}"
         )])
     
+    # Add skip button
+    keyboard.append([InlineKeyboardButton("➡️ Skip quality (use default)", callback_data=f"skip_quality:{session_id}")])
+
     # Add back and cancel buttons
     keyboard.append([
         InlineKeyboardButton("⬅️ Back", callback_data=f"back_size:{session_id}"),
@@ -219,7 +328,7 @@ async def show_quality_selection(update: Update, context: ContextTypes.DEFAULT_T
             f"🎨 *Image Generation Setup*\n\n"
             f"*Prompt:* {prompt}\n"
             f"*Model:* {model}\n"
-            f"*Size:* {size}\n\n"
+            f"*Size:* {size or 'default'}\n\n"
             f"*Step 3: Select quality*",
             reply_markup=reply_markup,
             parse_mode='Markdown'
@@ -229,6 +338,11 @@ async def show_final_confirmation(update: Update, context: ContextTypes.DEFAULT_
     """Show final confirmation with generate button."""
     session = user_sessions.get(session_id)
     if not session:
+        # Handle both message updates and callback queries for error messages
+        if update.callback_query:
+            await update.callback_query.edit_message_text("❌ Session expired. Please use /img again.")
+        elif update.message:
+            await update.message.reply_text("❌ Session expired. Please use /img again.")
         return
     
     prompt = session["prompt"]
@@ -253,8 +367,8 @@ async def show_final_confirmation(update: Update, context: ContextTypes.DEFAULT_
             f"🎨 *Image Generation Setup - Final Confirmation*\n\n"
             f"*Prompt:* {prompt}\n"
             f"*Model:* {model}\n"
-            f"*Size:* {size}\n"
-            f"*Quality:* {quality}\n\n"
+            f"*Size:* {size or 'default'}\n"
+            f"*Quality:* {quality or 'default'}\n\n"
             f"Ready to generate your image!",
             reply_markup=reply_markup,
             parse_mode='Markdown'
@@ -273,7 +387,16 @@ async def handle_callback_query(update: Update, context: ContextTypes.DEFAULT_TY
     action = parts[0]
     session_id = parts[1] if len(parts) > 1 else None
     
-    if action == "model" and session_id:
+    if action == "provider" and session_id:
+        # Store selected provider
+        provider = parts[2]
+        user_sessions[session_id]["provider"] = provider
+        user_sessions[session_id]["step"] = "model_selection"
+        
+        # Show model selection
+        await show_model_selection(update, context, session_id)
+        
+    elif action == "model" and session_id:
         # Store selected model
         model = parts[2]
         user_sessions[session_id]["model"] = model
@@ -290,6 +413,12 @@ async def handle_callback_query(update: Update, context: ContextTypes.DEFAULT_TY
         
         # Show quality selection
         await show_quality_selection(update, context, session_id)
+    
+    elif action == "skip_size" and session_id:
+        # Skip size selection
+        user_sessions[session_id]["size"] = None
+        user_sessions[session_id]["step"] = "quality_selection"
+        await show_quality_selection(update, context, session_id)
         
     elif action == "quality" and session_id:
         # Store selected quality
@@ -299,11 +428,22 @@ async def handle_callback_query(update: Update, context: ContextTypes.DEFAULT_TY
         
         # Show final confirmation
         await show_final_confirmation(update, context, session_id)
+    
+    elif action == "skip_quality" and session_id:
+        # Skip quality selection
+        user_sessions[session_id]["quality"] = None
+        user_sessions[session_id]["step"] = "confirmation"
+        await show_final_confirmation(update, context, session_id)
         
     elif action == "generate" and session_id:
         # Generate the image
         await generate_image_from_session(update, context, session_id)
-        
+
+    elif action == "back_provider" and session_id:
+        # Go back to model selection
+        user_sessions[session_id]["step"] = "provider_selection"
+        await show_provider_selection(update, context, session_id)
+
     elif action == "back_model" and session_id:
         # Go back to model selection
         user_sessions[session_id]["step"] = "model_selection"
@@ -338,6 +478,7 @@ async def generate_image_from_session(update: Update, context: ContextTypes.DEFA
     
     query = update.callback_query
     prompt = session["prompt"]
+    provider = session["provider"]
     model = session["model"]
     size = session["size"]
     quality = session["quality"]
@@ -347,18 +488,20 @@ async def generate_image_from_session(update: Update, context: ContextTypes.DEFA
         f"🎨 *Generating Image...*\n\n"
         f"*Prompt:* {prompt}\n"
         f"*Model:* {model}\n"
-        f"*Size:* {size}\n"
-        f"*Quality:* {quality}\n\n"
+        f"*Size:* {size or 'default'}\n"
+        f"*Quality:* {quality or 'default'}\n\n"
         f"Please wait while we create your image...",
         parse_mode='Markdown'
     )
     
     try:
         # Generate the image
+        logger.info(f"send request: size:{size}")
+        image_service.with_provider(provider)
         result = image_service.generate_image(
             prompt=prompt,
             model=model,
-            size=size,
+            size=size if size != "None" else None,
             quality=quality
         )
         
@@ -370,8 +513,8 @@ async def generate_image_from_session(update: Update, context: ContextTypes.DEFA
                 caption=f"🎨 *Generated Image*\n\n"
                         f"*Prompt:* {prompt}\n"
                         f"*Model:* {result.model}\n"
-                        f"*Size:* {result.size}\n"
-                        f"*Quality:* {result.quality}",
+                        f"*Size:* {result.size or 'default'}\n"
+                        f"*Quality:* {result.quality or 'default'}",
                 parse_mode='Markdown'
             )
             
@@ -388,12 +531,6 @@ async def generate_image_from_session(update: Update, context: ContextTypes.DEFA
         else:
             error_msg = f"❌ Image generation failed: {result.error or 'Unknown error'}"
             await status_message.edit_text(error_msg)
-            
-            # If there's debug info, log it for troubleshooting
-            if hasattr(result, 'debug_info') and result.debug_info:
-                logger.debug(f"Image generation debug info: {result.debug_info}")
-            elif hasattr(result, 'result') and result.result:
-                logger.debug(f"Image generation raw result: {result.result}")
             
     except Exception as e:
         logger.error(f"Error generating image: {e}")
