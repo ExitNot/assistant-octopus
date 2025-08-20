@@ -30,7 +30,7 @@ async def supervisor_execute(
     conversation.append({"role": "user", "content": req.prompt})
     ollama = OllamaClient()
     try:
-        response = await ollama.generate(prompt=req.prompt)
+        response = await ollama.generate(prompt=req.prompt, messages=conversation, stream=False)
     except OllamaAPIError as e:
         raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail=str(e))
     conversation.append({"role": "assistant", "content": response})

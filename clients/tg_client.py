@@ -1,9 +1,11 @@
 from telegram import Bot
 from telegram.ext import Application
 from utils.config import get_settings
+from utils.logging_config import system_logging
 import httpx
 from clients.tg_handlers import register_handlers
 
+system_logging("INFO")
 settings = get_settings()
 
 TELEGRAM_BOT_TOKEN = settings.telegram_bot_token

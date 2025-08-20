@@ -12,6 +12,15 @@ class Settings(BaseSettings):
     telegram_bot_token: str = Field(..., env="TELERGRAM_BOT_TOKEN")
     supervisor_api_url: AnyUrl = Field(..., env="SUPERVISOR_API_URL")
     image_router_api_key: str = Field(..., env="IMAGE_ROUTER_API_KEY")
+    together_ai_api_key: str = Field(..., env="TOGETHER_AI_API_KEY")
+    
+    # Logging Configuration
+    log_level: str = Field(default="INFO", env="LOG_LEVEL")
+    log_file: str = Field(default="assistant_octopus", env="LOG_FILE")
+    log_dir: str = Field(default="logs", env="LOG_DIR")
+    log_max_bytes: int = Field(default=10 * 1024 * 1024, env="LOG_MAX_BYTES")  # 10MB
+    log_backup_count: int = Field(default=5, env="LOG_BACKUP_COUNT")
+    log_console_output: bool = Field(default=True, env="LOG_CONSOLE_OUTPUT")
     
     # Messaging Service Configuration
     # TODO: Create corresponding .env variables
