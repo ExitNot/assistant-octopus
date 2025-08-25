@@ -4,7 +4,7 @@ Messaging Service Package
 Handles asynchronous task processing, job queuing, and worker pool management.
 """
 
-from .models import Job, Message, JobStatus, JobPriority
+from models.messaging_models import Job, Message, JobStatus, JobPriority
 from .job_queue import JobQueue, InMemoryJobQueue
 from .messaging_service import MessagingService
 from .router import messaging_router

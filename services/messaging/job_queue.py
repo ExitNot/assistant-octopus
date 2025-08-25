@@ -12,7 +12,7 @@ from typing import Dict, List, Optional
 from datetime import datetime
 from abc import ABC, abstractmethod
 
-from .models import Job, JobStatus, JobPriority
+from models.messaging_models import Job, JobStatus, JobPriority
 
 
 class JobQueue(ABC):

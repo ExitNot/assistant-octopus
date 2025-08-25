@@ -9,7 +9,7 @@ from fastapi import APIRouter, HTTPException, status
 from typing import List, Dict, Any
 from pydantic import BaseModel
 
-from .models import Job, Message, JobStatus, JobPriority
+from ...models.messaging_models import Job, Message, JobStatus, JobPriority
 from .factory import get_messaging_service
 
 # Pydantic models for API requests/responses
