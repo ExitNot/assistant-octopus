@@ -1,5 +1,5 @@
 from utils.constants import CHROMA, IMG_TEST, INF_YOU, SDXL
-from ..image_model import ImageGenModel, ImageGenerationProviderClient, ImageGenerationResult, ResponseFormat
+from ..image_models import ImageGenModel, ImageGenerationProviderClient, ImageGenerationResult, ResponseFormat
 from utils.config import get_settings
 import logging
 import requests
