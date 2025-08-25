@@ -9,7 +9,7 @@ import os
 from datetime import datetime
 
 from services.messaging.job_queue import InMemoryJobQueue
-from services.messaging.models import Job, JobStatus, JobPriority, Message
+from models.messaging_models import Job, JobStatus, JobPriority, Message
 
 
 @pytest.fixture

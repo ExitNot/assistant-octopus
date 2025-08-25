@@ -8,7 +8,7 @@ job creation, status tracking, and queue operations.
 import pytest
 import asyncio
 from datetime import datetime
-from services.messaging.models import Job, Message, JobStatus, JobPriority
+from models.messaging_models import Job, Message, JobStatus, JobPriority
 from services.messaging.job_queue import InMemoryJobQueue
 from services.messaging.messaging_service import MessagingService
 

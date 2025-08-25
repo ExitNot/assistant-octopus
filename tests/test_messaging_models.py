@@ -7,7 +7,7 @@ deserialization, and state transitions.
 
 import pytest
 from datetime import datetime
-from services.messaging.models import Job, Message, JobStatus, JobPriority
+from models.messaging_models import Job, Message, JobStatus, JobPriority
 
 class TestJob:
     """Test Job model functionality"""

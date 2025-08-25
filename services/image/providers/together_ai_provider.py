@@ -1,5 +1,5 @@
 import logging
-from services.image.image_model import ImageGenModel, ImageGenerationProviderClient, ImageGenerationResult
+from services.image.image_models import ImageGenModel, ImageGenerationProviderClient, ImageGenerationResult
 from utils.config import get_settings
 from utils.constants import FLUX_FREE
 
