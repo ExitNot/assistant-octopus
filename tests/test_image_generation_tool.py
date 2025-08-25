@@ -19,7 +19,7 @@ import sys
 # Add the project root to the path for imports
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from services.image.image_generation_tool import ImageGenerationTool
+from examples.image_generation_tool import ImageGenerationTool
 
 
 class TestImageGenerationTool:
