@@ -9,10 +9,9 @@ from fastapi import APIRouter, HTTPException, status
 from typing import List, Dict, Any
 from pydantic import BaseModel
 
-from ...models.messaging_models import Job, Message, JobStatus, JobPriority
-from .factory import get_messaging_service
+from models.messaging_models import Job, Message, JobStatus, JobPriority
+from services.messaging.factory import get_messaging_service
 
-# Pydantic models for API requests/responses
 class CreateJobRequest(BaseModel):
     type: str
     payload: Dict[str, Any]
@@ -82,8 +81,6 @@ async def create_job(request: CreateJobRequest):
             max_retries=request.max_retries,
             metadata=request.metadata
         )
-        
-        # Submit job
         job_id = await messaging_service.submit_job(job)
         
         return {"job_id": job_id, "status": "submitted"}
@@ -114,8 +111,6 @@ async def send_message(request: CreateMessageRequest):
             payload=request.payload,
             correlation_id=request.correlation_id
         )
-        
-        # Send message
         job_id = await messaging_service.send_message(message)
         
         return {"job_id": job_id, "status": "sent"}

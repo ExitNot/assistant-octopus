@@ -57,7 +57,7 @@ class ImageGenerationResult:
     result: Optional[dict]
     error: Optional[str]
 
-    def __init__(self, data: Optional[str], prompt: str, model: str, size: Optional[str] = None, quality: Optional[str] = None, response_format: ResponseFormat = ResponseFormat.URL, result: Optional[dict] = None, error: Optional[str] = None):
+    def __init__(self, prompt: str, model: str, data: Optional[str] = None, size: Optional[str] = None, quality: Optional[str] = None, response_format: ResponseFormat = ResponseFormat.URL, result: Optional[dict] = None, error: Optional[str] = None):
         """
         Initialize an ImageGenerationResult instance.
         
