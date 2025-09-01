@@ -14,7 +14,7 @@ Dependencies:
 
 import logging
 from typing import Optional, Dict, Any
-from .image_model import ImageGenerationProvider, ImageGenerationProviderClient, ImageGenerationResult, ResponseFormat
+from .image_models import ImageGenerationProvider, ImageGenerationProviderClient, ImageGenerationResult, ResponseFormat
 from .providers.image_router_provider import ImageRouterProvider
 from .providers.together_ai_provider import TogetherAiProvider
 from utils.constants import IMAGE_API, TOGETHER_AI_API

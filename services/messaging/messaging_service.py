@@ -7,7 +7,7 @@ message handling.
 """
 
 from typing import Callable, Dict, Any, Optional, List
-from .models import Job, Message, JobStatus
+from models.messaging_models import Job, Message, JobStatus
 from .job_queue import JobQueue
 from datetime import datetime
 

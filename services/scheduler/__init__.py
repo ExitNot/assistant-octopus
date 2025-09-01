@@ -4,5 +4,7 @@ Scheduler Service Package
 Handles task scheduling, timing, and execution coordination.
 """
 
-# This will be populated when the scheduler service is implemented
-__all__ = []
+from .scheduler_service import SchedulerService
+from .task_service import TaskService
+
+__all__ = ['SchedulerService', 'TaskService']

@@ -1,7 +1,7 @@
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import ContextTypes, MessageHandler, filters, Application, CommandHandler, CallbackQueryHandler
 from services.image.image_service import ImageService
-from services.image.image_model import ImageGenerationProvider
+from services.image.image_models import ImageGenerationProvider
 from utils.config import get_settings
 import httpx
 import logging

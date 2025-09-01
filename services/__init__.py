@@ -1,7 +1,6 @@
 from fastapi import APIRouter, HTTPException, status
 from .supervisor import supervisor_router
 from .llm import OllamaClient
-from .messaging import messaging_router
 
 planning_router = APIRouter(prefix="/planning", tags=["Planning"])
 knowledge_router = APIRouter(prefix="/knowledge", tags=["Knowledge"])

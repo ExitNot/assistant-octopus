@@ -5,9 +5,9 @@ from services import (
     planning_router,
     knowledge_router,
     habit_router,
-    notification_router,
-    messaging_router,
+    notification_router
 )
+from api.routes.messaging import messaging_router
 from utils.logging_config import setup_logging
 from utils.config import get_settings
 
