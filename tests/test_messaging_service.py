@@ -6,6 +6,7 @@ job creation, status tracking, and queue operations.
 """
 
 import pytest
+import pytest_asyncio
 import asyncio
 from datetime import datetime
 from models.messaging_models import Job, Message, JobStatus, JobPriority
@@ -13,24 +14,28 @@ from services.messaging.job_queue import InMemoryJobQueue
 from services.messaging.messaging_service import MessagingService
 
 
-@pytest.fixture
+@pytest_asyncio.fixture
 async def job_queue():
     """Create a test job queue"""
     queue = InMemoryJobQueue(backup_file="test_jobs_backup.json")
-    yield queue
-    # Cleanup
-    import os
-    if os.path.exists("test_jobs_backup.json"):
-        os.remove("test_jobs_backup.json")
+    try:
+        yield queue
+    finally:
+        # Cleanup
+        import os
+        if os.path.exists("test_jobs_backup.json"):
+            os.remove("test_jobs_backup.json")
 
 
-@pytest.fixture
+@pytest_asyncio.fixture
 async def messaging_service(job_queue):
     """Create a test messaging service"""
     service = MessagingService(job_queue)
     await service.start()
-    yield service
-    await service.stop()
+    try:
+        yield service
+    finally:
+        await service.stop()
 
 
 @pytest.mark.asyncio

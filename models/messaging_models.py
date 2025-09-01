@@ -89,7 +89,7 @@ class Job:
         # Convert string representations back to proper types
         if isinstance(data.get('status'), str):
             data['status'] = JobStatus(data['status'])
-        if isinstance(data.get('priority'), str):
+        if isinstance(data.get('priority'), (str, int)):
             data['priority'] = JobPriority(data['priority'])
         
         # Convert datetime strings back to datetime objects
