@@ -7,40 +7,38 @@ including CRUD operations and task control functionality.
 
 from typing import List, Optional
 from fastapi import APIRouter, HTTPException, Query, Depends
-from fastapi.responses import JSONResponse
 
 from api.models.task_models import (
     CreateTaskRequest,
     UpdateTaskRequest,
     TaskResponse,
     TaskListResponse,
-    TaskControlRequest,
-    TaskControlResponse,
-    ErrorResponse
+    TaskControlResponse
 )
-from models.task_models import Task, TaskType, RepeatInterval
+from models.task_models import Task, TaskType
 from services.scheduler import TaskService, SchedulerService
 from services.messaging import MessagingService
 
-# Create router
-router = APIRouter(prefix="/api/v1/tasks", tags=["tasks"])
+# Create tasks_router
+tasks_router = APIRouter(prefix="/tasks", tags=["tasks"])
 
+class Servicies:
+    def __init__(self, messaging_service: MessagingService, scheduler_service: SchedulerService, task_service: TaskService):
+        self.messaging_service = messaging_service
+        self.scheduler_service = scheduler_service
+        self.task_service = task_service
 
-# Dependency injection
-# TODO: This should be properly injected from the main FastAPI app
-# For now, we create services on each request (not ideal for production)
-async def get_task_service() -> TaskService:
-    """Get task service instance"""
+async def get_servicies() -> Servicies:
     from services.messaging.factory import create_messaging_service
     messaging_service = await create_messaging_service()
     scheduler_service = SchedulerService(messaging_service)
-    return TaskService(scheduler_service)
+    task_service = TaskService(scheduler_service)
+    return Servicies(messaging_service=messaging_service, scheduler_service=scheduler_service, task_service=task_service)
 
-
-@router.post("/", response_model=TaskResponse, status_code=201)
+@tasks_router.post("/", response_model=TaskResponse, status_code=201)
 async def create_task(
     request: CreateTaskRequest,
-    task_service: TaskService = Depends(get_task_service)
+    servicies: Servicies = Depends(get_servicies)
 ) -> TaskResponse:
     """
     Create a new scheduled or repeated task
@@ -56,7 +54,6 @@ async def create_task(
         HTTPException: If task creation fails
     """
     try:
-        # Convert request to Task model
         task = Task(
             name=request.name,
             description=request.description,
@@ -67,10 +64,8 @@ async def create_task(
             cron_expression=request.cron_expression
         )
         
-        # Create task
-        created_task = await task_service.create_task(task)
+        created_task = await servicies.task_service.create_task(task)
         
-        # Convert to response model
         return TaskResponse(
             id=created_task.id,
             name=created_task.name,
@@ -91,13 +86,13 @@ async def create_task(
         raise HTTPException(status_code=500, detail=f"Failed to create task: {str(e)}")
 
 
-@router.get("/", response_model=TaskListResponse)
+@tasks_router.get("/", response_model=TaskListResponse)
 async def get_tasks(
     task_type: Optional[TaskType] = Query(None, description="Filter by task type"),
     is_active: Optional[bool] = Query(None, description="Filter by active status"),
     page: int = Query(1, ge=1, description="Page number"),
     size: int = Query(100, ge=1, le=1000, description="Page size"),
-    task_service: TaskService = Depends(get_task_service)
+    servicies: Servicies = Depends(get_servicies)
 ) -> TaskListResponse:
     """
     Get list of tasks with optional filtering and pagination
@@ -114,13 +109,13 @@ async def get_tasks(
     """
     try:
         offset = (page - 1) * size
-        tasks = await task_service.get_tasks(
+        tasks = await servicies.task_service.get_tasks(
             task_type=task_type,
             is_active=is_active,
             limit=size,
             offset=offset
         )
-        total = task_service.get_task_count(task_type=task_type, is_active=is_active)
+        total = servicies.task_service.get_task_count(task_type=task_type, is_active=is_active)
         
         task_responses = [
             TaskResponse(
@@ -150,10 +145,10 @@ async def get_tasks(
         raise HTTPException(status_code=500, detail=f"Failed to get tasks: {str(e)}")
 
 
-@router.get("/{task_id}", response_model=TaskResponse)
+@tasks_router.get("/{task_id}", response_model=TaskResponse)
 async def get_task(
     task_id: str,
-    task_service: TaskService = Depends(get_task_service)
+    servicies: Servicies = Depends(get_servicies)
 ) -> TaskResponse:
     """
     Get a specific task by ID
@@ -169,7 +164,7 @@ async def get_task(
         HTTPException: If task not found
     """
     try:
-        task = await task_service.get_task(task_id)
+        task = await servicies.task_service.get_task(task_id)
         if not task:
             raise HTTPException(status_code=404, detail="Task not found")
         
@@ -193,11 +188,11 @@ async def get_task(
         raise HTTPException(status_code=500, detail=f"Failed to get task: {str(e)}")
 
 
-@router.put("/{task_id}", response_model=TaskResponse)
+@tasks_router.put("/{task_id}", response_model=TaskResponse)
 async def update_task(
     task_id: str,
     request: UpdateTaskRequest,
-    task_service: TaskService = Depends(get_task_service)
+    servicies: Servicies = Depends(get_servicies)
 ) -> TaskResponse:
     """
     Update an existing task
@@ -232,7 +227,7 @@ async def update_task(
             updates['is_active'] = request.is_active
         
         # Update task
-        updated_task = await task_service.update_task(task_id, updates)
+        updated_task = await servicies.task_service.update_task(task_id, updates)
         if not updated_task:
             raise HTTPException(status_code=404, detail="Task not found")
         
@@ -258,10 +253,10 @@ async def update_task(
         raise HTTPException(status_code=500, detail=f"Failed to update task: {str(e)}")
 
 
-@router.delete("/{task_id}", status_code=204)
+@tasks_router.delete("/{task_id}", status_code=204)
 async def delete_task(
     task_id: str,
-    task_service: TaskService = Depends(get_task_service)
+    servicies: Servicies = Depends(get_servicies)
 ):
     """
     Delete a task and cancel all related jobs
@@ -274,7 +269,7 @@ async def delete_task(
         HTTPException: If task not found or deletion fails
     """
     try:
-        success = await task_service.delete_task(task_id)
+        success = await servicies.task_service.delete_task(task_id)
         if not success:
             raise HTTPException(status_code=404, detail="Task not found")
         
@@ -286,10 +281,10 @@ async def delete_task(
         raise HTTPException(status_code=500, detail=f"Failed to delete task: {str(e)}")
 
 
-@router.post("/{task_id}/pause", response_model=TaskControlResponse)
+@tasks_router.post("/{task_id}/pause", response_model=TaskControlResponse)
 async def pause_task(
     task_id: str,
-    task_service: TaskService = Depends(get_task_service)
+    servicies: Servicies = Depends(get_servicies)
 ) -> TaskControlResponse:
     """
     Pause a task
@@ -305,7 +300,7 @@ async def pause_task(
         HTTPException: If task not found or operation fails
     """
     try:
-        success = await task_service.pause_task(task_id)
+        success = await servicies.task_service.pause_task(task_id)
         if not success:
             raise HTTPException(status_code=404, detail="Task not found")
         
@@ -321,10 +316,10 @@ async def pause_task(
         raise HTTPException(status_code=500, detail=f"Failed to pause task: {str(e)}")
 
 
-@router.post("/{task_id}/resume", response_model=TaskControlResponse)
+@tasks_router.post("/{task_id}/resume", response_model=TaskControlResponse)
 async def resume_task(
     task_id: str,
-    task_service: TaskService = Depends(get_task_service)
+    servicies: Servicies = Depends(get_servicies)
 ) -> TaskControlResponse:
     """
     Resume a paused task
@@ -340,7 +335,7 @@ async def resume_task(
         HTTPException: If task not found or operation fails
     """
     try:
-        success = await task_service.resume_task(task_id)
+        success = await servicies.task_service.resume_task(task_id)
         if not success:
             raise HTTPException(status_code=404, detail="Task not found")
         
@@ -356,10 +351,10 @@ async def resume_task(
         raise HTTPException(status_code=500, detail=f"Failed to resume task: {str(e)}")
 
 
-@router.post("/{task_id}/cancel", response_model=TaskControlResponse)
+@tasks_router.post("/{task_id}/cancel", response_model=TaskControlResponse)
 async def cancel_task(
     task_id: str,
-    task_service: TaskService = Depends(get_task_service)
+    servicies: Servicies = Depends(get_servicies)
 ) -> TaskControlResponse:
     """
     Cancel a task (remove from scheduler but keep in storage)
@@ -375,7 +370,7 @@ async def cancel_task(
         HTTPException: If task not found or operation fails
     """
     try:
-        success = await task_service.cancel_task(task_id)
+        success = await servicies.task_service.cancel_task(task_id)
         if not success:
             raise HTTPException(status_code=404, detail="Task not found")
         
@@ -391,10 +386,10 @@ async def cancel_task(
         raise HTTPException(status_code=500, detail=f"Failed to cancel task: {str(e)}")
 
 
-@router.get("/{task_id}/status")
+@tasks_router.get("/{task_id}/status")
 async def get_task_status(
     task_id: str,
-    task_service: TaskService = Depends(get_task_service)
+    servicies: Servicies = Depends(get_servicies)
 ):
     """
     Get task status and scheduling information
@@ -410,14 +405,13 @@ async def get_task_status(
         HTTPException: If task not found
     """
     try:
-        task = await task_service.get_task(task_id)
+        task = await servicies.task_service.get_task(task_id)
         if not task:
             raise HTTPException(status_code=404, detail="Task not found")
         
         # Get scheduler status for this task
-        scheduler_service = task_service.scheduler_service
-        is_scheduled = scheduler_service.is_task_scheduled(task_id)
-        job = scheduler_service.get_task_job(task_id)
+        is_scheduled = servicies.scheduler_service.is_task_scheduled(task_id)
+        job = servicies.scheduler_service.get_task_job(task_id)
         
         status_info = {
             "task_id": task_id,
