@@ -7,6 +7,7 @@ integrating with the Scheduler Service for task scheduling.
 
 from typing import List, Optional, Dict, Any
 from datetime import datetime
+from pytz import timezone
 import uuid
 
 from models.task_models import Task, TaskType, RepeatInterval
@@ -280,7 +281,7 @@ class TaskService:
                 raise ValueError("Cron expression is required for custom repeat intervals")
         
         # Validate scheduled time is in the future for one-time tasks
-        if task.task_type == TaskType.SCHEDULED and task.scheduled_at <= datetime.now():
+        if task.task_type == TaskType.SCHEDULED and task.scheduled_at <= datetime.now(tz=timezone('Europe/Prague')):  # TODO: replace hardcoded timezone
             raise ValueError("Scheduled time must be in the future for one-time tasks")
 
     def _validate_task_updates(self, updates: Dict[str, Any]):

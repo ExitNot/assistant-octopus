@@ -57,7 +57,6 @@ async def get_messaging_service() -> MessagingService:
         )
     return messaging_service
 
-
 @tasks_router.post("/", response_model=TaskResponse, status_code=201)
 async def create_task(
     request: CreateTaskRequest,
@@ -215,7 +214,7 @@ async def get_task(
 async def update_task(
     task_id: str,
     request: UpdateTaskRequest,
-    task_service: TaskService = Depends(get_task_service)
+    servicies: Servicies = Depends(get_servicies)
 ) -> TaskResponse:
     """
     Update an existing task
@@ -250,7 +249,7 @@ async def update_task(
             updates['is_active'] = request.is_active
         
         # Update task
-        updated_task = await task_service.update_task(task_id, updates)
+        updated_task = await servicies.task_service.update_task(task_id, updates)
         if not updated_task:
             raise HTTPException(status_code=404, detail="Task not found")
         
@@ -279,7 +278,7 @@ async def update_task(
 @tasks_router.delete("/{task_id}", status_code=204)
 async def delete_task(
     task_id: str,
-    task_service: TaskService = Depends(get_task_service)
+    servicies: Servicies = Depends(get_servicies)
 ):
     """
     Delete a task and cancel all related jobs
@@ -292,7 +291,7 @@ async def delete_task(
         HTTPException: If task not found or deletion fails
     """
     try:
-        success = await task_service.delete_task(task_id)
+        success = await servicies.task_service.delete_task(task_id)
         if not success:
             raise HTTPException(status_code=404, detail="Task not found")
         
@@ -307,7 +306,7 @@ async def delete_task(
 @tasks_router.post("/{task_id}/pause", response_model=TaskControlResponse)
 async def pause_task(
     task_id: str,
-    task_service: TaskService = Depends(get_task_service)
+    servicies: Servicies = Depends(get_servicies)
 ) -> TaskControlResponse:
     """
     Pause a task
@@ -323,7 +322,7 @@ async def pause_task(
         HTTPException: If task not found or operation fails
     """
     try:
-        success = await task_service.pause_task(task_id)
+        success = await servicies.task_service.pause_task(task_id)
         if not success:
             raise HTTPException(status_code=404, detail="Task not found")
         
@@ -342,7 +341,7 @@ async def pause_task(
 @tasks_router.post("/{task_id}/resume", response_model=TaskControlResponse)
 async def resume_task(
     task_id: str,
-    task_service: TaskService = Depends(get_task_service)
+    servicies: Servicies = Depends(get_servicies)
 ) -> TaskControlResponse:
     """
     Resume a paused task
@@ -358,7 +357,7 @@ async def resume_task(
         HTTPException: If task not found or operation fails
     """
     try:
-        success = await task_service.resume_task(task_id)
+        success = await servicies.task_service.resume_task(task_id)
         if not success:
             raise HTTPException(status_code=404, detail="Task not found")
         
@@ -377,7 +376,7 @@ async def resume_task(
 @tasks_router.post("/{task_id}/cancel", response_model=TaskControlResponse)
 async def cancel_task(
     task_id: str,
-    task_service: TaskService = Depends(get_task_service)
+    servicies: Servicies = Depends(get_servicies)
 ) -> TaskControlResponse:
     """
     Cancel a task (remove from scheduler but keep in storage)
@@ -393,7 +392,7 @@ async def cancel_task(
         HTTPException: If task not found or operation fails
     """
     try:
-        success = await task_service.cancel_task(task_id)
+        success = await servicies.task_service.cancel_task(task_id)
         if not success:
             raise HTTPException(status_code=404, detail="Task not found")
         
@@ -412,8 +411,7 @@ async def cancel_task(
 @tasks_router.get("/{task_id}/status")
 async def get_task_status(
     task_id: str,
-    task_service: TaskService = Depends(get_task_service),
-    scheduler_service: SchedulerService = Depends(get_scheduler_service)
+    servicies: Servicies = Depends(get_servicies)
 ):
     """
     Get task status and scheduling information
@@ -421,7 +419,6 @@ async def get_task_status(
     Args:
         task_id: Task identifier
         task_service: Task service instance
-        scheduler_service: Scheduler service instance
         
     Returns:
         Task status information
@@ -430,13 +427,13 @@ async def get_task_status(
         HTTPException: If task not found
     """
     try:
-        task = await task_service.get_task(task_id)
+        task = await servicies.task_service.get_task(task_id)
         if not task:
             raise HTTPException(status_code=404, detail="Task not found")
         
         # Get scheduler status for this task
-        is_scheduled = scheduler_service.is_task_scheduled(task_id)
-        job = scheduler_service.get_task_job(task_id)
+        is_scheduled = servicies.scheduler_service.is_task_scheduled(task_id)
+        job = servicies.scheduler_service.get_task_job(task_id)
         
         status_info = {
             "task_id": task_id,
