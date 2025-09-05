@@ -12,6 +12,7 @@ import uuid
 from models.task_models import Task, TaskType, RepeatInterval
 from .scheduler_service import SchedulerService
 from utils.logger import get_logger
+from db.repositories.task_repo import TaskRepo
 
 
 class TaskService:
@@ -22,17 +23,19 @@ class TaskService:
     while coordinating with the Scheduler Service for scheduling.
     """
     
-    def __init__(self, scheduler_service: SchedulerService):
+    def __init__(self, scheduler_service: SchedulerService, task_repo: TaskRepo, backup_file: str = "tasks_backup.json"):
         """
         Initialize the task service
         
         Args:
             scheduler_service: Service for scheduling and managing tasks
+            task_repo: Repository for task data operations
+            backup_file: File path for task backup persistence
         """
         self.scheduler_service = scheduler_service
+        self.task_repo = task_repo
         self.logger = get_logger(__name__)
-        # In-memory storage for now, will be replaced with database later
-        self._tasks: Dict[str, Task] = {}
+        self.backup_file = backup_file
 
     async def create_task(self, task: Task) -> Task:
         """
@@ -49,12 +52,10 @@ class TaskService:
         """
         self._validate_task(task)
         
-        if not task.id:
-            task.id = str(uuid.uuid4())
-        
         task.created_at = datetime.now()
         task.updated_at = datetime.now()
-        self._tasks[task.id] = task
+        
+        created_task = await self.task_repo.create(task)
         self.logger.info(f"Task '{task.name}' (ID: {task.id}) created and stored")
         
         if task.is_active:
@@ -80,13 +81,12 @@ class TaskService:
         Returns:
             List of matching tasks
         """
-        tasks = list(self._tasks.values())
+        tasks = await self.task_repo.list(is_active=is_active)
         
         # Filters
+        # TODO: Move to db filtering
         if task_type is not None:
             tasks = [t for t in tasks if t.task_type == task_type]
-        if is_active is not None:
-            tasks = [t for t in tasks if t.is_active == is_active]
         
         # Pagination
         tasks = tasks[offset:offset + limit]
@@ -103,7 +103,7 @@ class TaskService:
         Returns:
             Task if found, None otherwise
         """
-        return self._tasks.get(task_id)
+        return await self.task_repo.get(task_id)
 
     async def update_task(self, task_id: str, updates: Dict[str, Any]) -> Optional[Task]:
         """
@@ -119,7 +119,7 @@ class TaskService:
         Raises:
             ValueError: If update data is invalid
         """
-        task = self._tasks.get(task_id)
+        task = await self.task_repo.get(task_id)
         if not task:
             return None
         
@@ -129,8 +129,12 @@ class TaskService:
             if hasattr(task, field) and field not in ['id', 'created_at']:
                 setattr(task, field, value)
         
-        
         task.updated_at = datetime.now()
+        
+        success = await self.task_repo.update(task_id, task)
+        if not success:
+            raise RuntimeError(f"Failed to update task '{task_id}'")
+        
         if 'scheduled_at' in updates or 'repeat_interval' in updates or 'cron_expression' in updates:
             await self.scheduler_service.cancel_task(task_id)
             
@@ -155,13 +159,12 @@ class TaskService:
         Returns:
             True if task was deleted successfully, False otherwise
         """
-        if task_id not in self._tasks:
+        task = await self.task_repo.get(task_id)
+        if not task:
             return False
         
         await self.scheduler_service.cancel_task(task_id)
-        del self._tasks[task_id]
-        
-        return True
+        return await self.task_repo.delete(task_id)
 
     async def pause_task(self, task_id: str) -> bool:
         """
@@ -173,12 +176,17 @@ class TaskService:
         Returns:
             True if task was paused successfully, False otherwise
         """
-        task = self._tasks.get(task_id)
+        task = await self.task_repo.get(task_id)
         if not task:
             return False
+        
         task.is_active = False
         task.updated_at = datetime.now()
         
+        success = await self.task_repo.update(task_id, task)
+        if not success:
+            return False
+
         return await self.scheduler_service.pause_task(task_id)
 
     async def resume_task(self, task_id: str) -> bool:
@@ -191,11 +199,16 @@ class TaskService:
         Returns:
             True if task was resumed successfully, False otherwise
         """
-        task = self._tasks.get(task_id)
+        task = await self.task_repo.get(task_id)
         if not task:
             return False
+        
         task.is_active = True
         task.updated_at = datetime.now()
+        
+        success = await self.task_repo.update(task_id, task)
+        if not success:
+            return False
         
         return await self.scheduler_service.resume_task(task_id)
 
@@ -209,15 +222,20 @@ class TaskService:
         Returns:
             True if task was cancelled successfully, False otherwise
         """
-        task = self._tasks.get(task_id)
+        task = await self.task_repo.get(task_id)
         if not task:
             return False
+        
         task.is_active = False
         task.updated_at = datetime.now()
         
+        success = await self.task_repo.update(task_id, task)
+        if not success:
+            return False
+        
         return await self.scheduler_service.cancel_task(task_id)
 
-    def get_task_count(self, task_type: Optional[TaskType] = None, is_active: Optional[bool] = None) -> int:
+    async def get_task_count(self, task_type: Optional[TaskType] = None, is_active: Optional[bool] = None) -> int:
         """
         Get count of tasks with optional filtering
         
@@ -228,12 +246,10 @@ class TaskService:
         Returns:
             Number of matching tasks
         """
-        tasks = list(self._tasks.values())
+        tasks = await self.task_repo.list(is_active=is_active)
         
         if task_type is not None:
             tasks = [t for t in tasks if t.task_type == task_type]   
-        if is_active is not None:
-            tasks = [t for t in tasks if t.is_active == is_active]
         
         return len(tasks)
 
