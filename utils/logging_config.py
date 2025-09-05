@@ -91,6 +91,8 @@ def setup_logging(
     logging.getLogger("uvicorn.access").setLevel(logging.WARNING)
     logging.getLogger("fastapi").setLevel(logging.WARNING)
     logging.getLogger("httpx").setLevel(logging.WARNING)
+    logging.getLogger("httpcore").setLevel(logging.WARNING)
+    logging.getLogger("hpack").setLevel(logging.WARNING)
     logging.getLogger("requests").setLevel(logging.WARNING)
     
     # Log the logging setup

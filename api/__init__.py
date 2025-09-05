@@ -1,4 +1,5 @@
-from .routes import tasks_router
+from .routes import tasks
+from .routes import messaging
 from .models import *
 
-__all__ = ['tasks_router']
+__all__ = ['tasks', 'messaging']

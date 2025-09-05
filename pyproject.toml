@@ -21,6 +21,9 @@ aiofiles = "^24.1.0"
 requests = "^2.32.4"
 openai = "^1.99.9"
 apscheduler = "^3.11.0"
+prompt_toolkit = "^3.0.43"
+supabase = "^2.3.4"
+datetime = "^5.5"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.4.1"

@@ -76,6 +76,13 @@ class Task:
             data['task_type'] = data['task_type'].value
         if isinstance(data.get('repeat_interval'), RepeatInterval):
             data['repeat_interval'] = data['repeat_interval'].value
+        if isinstance(data.get('scheduled_at'), datetime):
+            data['scheduled_at'] = data['scheduled_at'].isoformat()
+        if isinstance(data.get('created_at'), datetime):
+            data['created_at'] = data['created_at'].isoformat()
+        if isinstance(data.get('updated_at'), datetime):
+            data['updated_at'] = data['updated_at'].isoformat()
+
         return data
     
     @classmethod

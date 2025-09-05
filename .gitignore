@@ -199,3 +199,5 @@ __marimo__/
 
 # Custom
 examples/
+backups/
+db/schemas/

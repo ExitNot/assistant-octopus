@@ -16,4 +16,4 @@ poetry install
 
 # Run API
 echo "Starting FastAPI app..."
-poetry run uvicorn services.api:app --reload 
+poetry run uvicorn api.api:app --reload 

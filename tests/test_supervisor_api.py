@@ -2,7 +2,7 @@ import os
 import pytest
 import conftest
 from httpx import AsyncClient, ASGITransport
-from services.api import app
+from api.api import app
 from unittest.mock import patch, AsyncMock
 import pytest_asyncio
 

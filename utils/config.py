@@ -22,14 +22,24 @@ class Settings(BaseSettings):
     log_backup_count: int = Field(default=5, env="LOG_BACKUP_COUNT")
     log_console_output: bool = Field(default=True, env="LOG_CONSOLE_OUTPUT")
     
+    # Storage Configuration
+    storage_backend: str = Field(default="file", env="STORAGE_BACKEND")  # "file" or "supabase"
+    
+    # Supabase Configuration
+    supabase_url: Optional[str] = Field(default=None, env="SUPABASE_URL")
+    supabase_key: Optional[str] = Field(default=None, env="SUPABASE_KEY")
+    supabase_anon_key: Optional[str] = Field(default=None, env="SUPABASE_ANON_KEY")
+    
     # Messaging Service Configuration
-    # TODO: Create corresponding .env variables
-    # messaging_backup_file: str = Field(default="jobs_backup.json", env="MESSAGING_BACKUP_FILE")
-    # messaging_max_retries: int = Field(default=3, env="MESSAGING_MAX_RETRIES")
-    # messaging_backup_interval: int = Field(default=60, env="MESSAGING_BACKUP_INTERVAL")
+    messaging_backup_file: str = Field(default="jobs_backup.json", env="MESSAGING_BACKUP_FILE")
+    messaging_max_retries: int = Field(default=3, env="MESSAGING_MAX_RETRIES")
+    messaging_backup_interval: int = Field(default=60, env="MESSAGING_BACKUP_INTERVAL")
+    
+    # Scheduler Service Configuration
+    scheduler_backup_file: str = Field(default="tasks_backup.json", env="SCHEDULER_BACKUP_FILE")
     
     # Job Queue Configuration
-    # job_queue_priority_enabled: bool = Field(default=True, env="JOB_QUEUE_PRIORITY_ENABLED")
+    job_queue_priority_enabled: bool = Field(default=True, env="JOB_QUEUE_PRIORITY_ENABLED")
 
     class Config:
         env_file = ".env"
@@ -42,8 +52,5 @@ _settings: Optional[Settings] = None
 def get_settings() -> Settings:
     global _settings
     if _settings is None:
-        try:
-            _settings = Settings()
-        except ValidationError as e:
-            raise RuntimeError(f"Configuration error: {e}")
+        _settings = Settings()
     return _settings 
