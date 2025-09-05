@@ -10,10 +10,12 @@ Provides an interactive CLI interface for managing the server with:
 """
 
 import asyncio
+import re
 import subprocess
 import sys
 import signal
 import os
+import time
 from typing import Optional, Dict, Any
 from datetime import datetime
 
@@ -22,12 +24,15 @@ from prompt_toolkit.completion import WordCompleter
 from prompt_toolkit.styles import Style
 from prompt_toolkit.formatted_text import FormattedText
 from prompt_toolkit.key_binding import KeyBindings
+from prompt_toolkit.key_binding import KeyBindings
 
+from db.repositories.task_repo import TaskRepo
 from services.messaging.factory import MessagingServiceFactory
 from services.scheduler import SchedulerService, TaskService
+from services.service_registry import service_registry
 from utils.config import get_settings
 from utils.logger import get_logger
-from db.storage import get_storage_backend
+from db.storage import SupabaseStorageBackend, get_storage_backend
 from utils.logging_config import system_logging
 
 
@@ -36,15 +41,16 @@ class ServerManager:
     
     def __init__(self):
         self.settings = get_settings()
-        system_logging("INFO")
+        system_logging("DEBUG")
         self.logger = get_logger(__name__)
         self.server_process: Optional[subprocess.Popen] = None
-        self.messaging_service = None
-        self.scheduler_service = None
-        self.task_service = None
-        self.storage_backend = get_storage_backend()
         self.is_running = False
         
+        # Add URL attributes
+        self.server_url = None
+        self.docs_url = None
+        self.redoc_url = None
+
         # Setup key bindings
         self.kb = KeyBindings()
         
@@ -74,17 +80,30 @@ class ServerManager:
     async def initialize_services(self):
         """Initialize messaging and scheduler services"""
         try:
+            # Initialize storage backend first
+            storage_backend = get_storage_backend()
+            service_registry.set_storage_backend(storage_backend)
+            self.logger.info("Storage backend initialized")
+            
             # Initialize messaging service
-            self.messaging_service = await MessagingServiceFactory.initialize_service()
+            messaging_service = await MessagingServiceFactory.initialize_service()
+            service_registry.set_messaging_service(messaging_service)
             self.logger.info("Messaging service initialized")
             
             # Initialize scheduler service
-            self.scheduler_service = SchedulerService(self.messaging_service)
-            await self.scheduler_service.start()
+            scheduler_service = SchedulerService(messaging_service)
+            await scheduler_service.start()
+            service_registry.set_scheduler_service(scheduler_service)
             self.logger.info("Scheduler service initialized")
             
-            # Initialize task service
-            self.task_service = TaskService(self.scheduler_service)
+            # Initialize task repository
+            task_repo = TaskRepo(storage_backend)
+            service_registry.set_task_repo(task_repo)
+            self.logger.info("Task repository initialized")
+            
+            # Initialize task service with both scheduler and repository
+            task_service = TaskService(scheduler_service, task_repo)
+            service_registry.set_task_service(task_service)
             self.logger.info("Task service initialized")
             
         except Exception as e:
@@ -93,62 +112,64 @@ class ServerManager:
 
     async def load_backups(self):
         """Load messages and schedules from storage"""
-        try:
-            # Load jobs from storage
-            jobs = await self.storage_backend.get_jobs()
-            if jobs:
-                # Restore jobs to messaging service
-                for job_data in jobs:
-                    if job_data.get('status') == 'pending':
-                        # Re-queue pending jobs
-                        from models.messaging_models import Job
-                        job = Job.from_dict(job_data)
-                        await self.messaging_service.job_queue.enqueue(job)
-                self.logger.info(f"Loaded {len(jobs)} jobs from storage")
+        # Not implemented for now
+        # try:
+        #     # Load jobs from storage
+        #     jobs = await self.storage_backend.get_jobs()
+        #     if jobs:
+        #         # Restore jobs to messaging service
+        #         for job_data in jobs:
+        #             if job_data.get('status') == 'pending':
+        #                 # Re-queue pending jobs
+        #                 from models.messaging_models import Job
+        #                 job = Job.from_dict(job_data)
+        #                 await self.messaging_service.job_queue.enqueue(job)
+        #         self.logger.info(f"Loaded {len(jobs)} jobs from storage")
             
-            # Load tasks from storage
-            tasks = await self.storage_backend.get_tasks()
-            if tasks:
-                # Restore tasks to task service
-                for task_data in tasks:
-                    from models.task_models import Task
-                    task = Task.from_dict(task_data)
-                    self.task_service._tasks[task.id] = task
+        #     # Load tasks from storage
+        #     tasks = await self.storage_backend.get_tasks()
+        #     if tasks:
+        #         # Restore tasks to task service
+        #         for task_data in tasks:
+        #             from models.task_models import Task
+        #             task = Task.from_dict(task_data)
+        #             self.task_service._tasks[task.id] = task
                     
-                    # Re-schedule active tasks
-                    if task.is_active:
-                        await self.scheduler_service.schedule_task(task)
-                self.logger.info(f"Loaded {len(tasks)} tasks from storage")
+        #             # Re-schedule active tasks
+        #             if task.is_active:
+        #                 await self.scheduler_service.schedule_task(task)
+        #         self.logger.info(f"Loaded {len(tasks)} tasks from storage")
                 
-        except Exception as e:
-            self.logger.error(f"Failed to load backups: {e}")
+        # except Exception as e:
+        #     self.logger.error(f"Failed to load backups: {e}")
 
     async def backup_data(self):
         """Backup messages and schedules to storage"""
-        try:
+        # Not implemented for now
+        # try:
             # Get current jobs from messaging service
-            jobs_data = []
-            if hasattr(self.messaging_service.job_queue, '_jobs'):
-                for job in self.messaging_service.job_queue._jobs.values():
-                    jobs_data.append(job.to_dict())
+            # jobs_data = []
+            # if hasattr(self.messaging_service.job_queue, '_jobs'):
+            #     for job in self.messaging_service.job_queue._jobs.values():
+            #         jobs_data.append(job.to_dict())
             
-            # Store jobs
-            for job_data in jobs_data:
-                await self.storage_backend.store_job(job_data)
+            # # Store jobs
+            # for job_data in jobs_data:
+            #     await self.storage_backend.store_job(job_data)
             
-            # Get current tasks from task service
-            tasks_data = []
-            for task in self.task_service._tasks.values():
-                tasks_data.append(task.to_dict())
+            # # Get current tasks from task service
+            # tasks_data = []
+            # for task in self.task_service._tasks.values():
+            #     tasks_data.append(task.to_dict())
             
-            # Store tasks
-            for task_data in tasks_data:
-                await self.storage_backend.store_task(task_data)
+            # # Store tasks
+            # for task_data in tasks_data:
+            #     await self.storage_backend.store_task(task_data)
             
-            self.logger.info(f"Backed up {len(jobs_data)} jobs and {len(tasks_data)} tasks")
+            # self.logger.info(f"Backed up {len(jobs_data)} jobs and {len(tasks_data)} tasks")
                 
-        except Exception as e:
-            self.logger.error(f"Failed to backup data: {e}")
+        # except Exception as e:
+        #     self.logger.error(f"Failed to backup data: {e}")
 
     def build_project(self) -> bool:
         """Build the project using poetry"""
@@ -181,18 +202,70 @@ class ServerManager:
             
             self.logger.info("Starting FastAPI server...")
             self.server_process = subprocess.Popen(
-                ['poetry', 'run', 'uvicorn', 'services.api:app', '--reload'],
+                ['poetry', 'run', 'uvicorn', 'api.api:app', '--reload'],
                 stdout=subprocess.PIPE,
                 stderr=subprocess.STDOUT,
                 text=True,
                 bufsize=1,
                 universal_newlines=True
             )
+            # Wait for server to start and capture the actual URL
+            server_url = None
+            docs_url = None
+            startup_timeout = 5  # seconds
+            start_time = time.time()
             
-            self.is_running = True
-            self.logger.info("Server started successfully")
+            while time.time() - start_time < startup_timeout:
+                if self.server_process.poll() is not None:
+                    self.logger.error("Server process terminated unexpectedly")
+                    return False
+                
+                try:
+                    line = self.server_process.stdout.readline()
+                    if line:
+                        self.logger.debug(f"Server output: {line.strip()}")
+                        # Look for uvicorn server start message
+                        # Pattern: "Uvicorn running on http://127.0.0.1:8000 (Press CTRL+C to quit)"
+                        match = re.search(r'Uvicorn running on (https?://[\d\.:]+(?::\d+)?)', line)
+                        if match:
+                            server_url = match.group(1)
+                            docs_url = f"{server_url}/docs"
+                            redoc_url = f"{server_url}/redoc"
+                            break
+                            
+                        # Alternative pattern for different uvicorn versions
+                        match = re.search(r'Application startup complete.*?on (https?://[\d\.:]+(?::\d+)?)', line)
+                        if match:
+                            server_url = match.group(1)
+                            docs_url = f"{server_url}/docs"
+                            redoc_url = f"{server_url}/redoc"
+                            break
+                except Exception as e:
+                    self.logger.debug(f"Error reading server output: {e}")
+                    break
+            
+            if server_url:
+                self.is_running = True
+                self.logger.info(f"Server started successfully on {server_url}")
+                self.logger.info(f"Swagger docs available at: {docs_url}")
+                self.logger.info(f"ReDoc available at: {redoc_url}")
+                
+                # Store URLs for later use
+                self.server_url = server_url
+                self.docs_url = docs_url
+                self.redoc_url = redoc_url
+            else:
+                # Fallback to default if we couldn't parse the output
+                self.is_running = True
+                self.server_url = "http://127.0.0.1:8000"
+                self.docs_url = f"{self.server_url}/docs"
+                self.redoc_url = f"{self.server_url}/redoc"
+                
+                self.logger.info(f"Server started (default URLs)")
+                self.logger.info(f"Server: {self.server_url}")
+                self.logger.info(f"Swagger docs: {self.docs_url}")
+                
             return True
-            
         except Exception as e:
             self.logger.error(f"Failed to start server: {e}")
             return False
@@ -291,10 +364,13 @@ class ServerManager:
         return {
             'server_running': self.is_running,
             'server_pid': self.server_process.pid if self.server_process else None,
-            'messaging_service': self.messaging_service is not None,
-            'scheduler_service': self.scheduler_service is not None,
-            'task_service': self.task_service is not None,
-            'storage_backend': self.settings.storage_backend,
+            'messaging_service': service_registry.get_messaging_service() is not None,
+            'scheduler_service': service_registry.get_scheduler_service() is not None,
+            'task_service': service_registry.get_task_service() is not None,
+            'task_repo': service_registry.get_task_repo() is not None,
+            'storage_backend': service_registry.get_storage_backend() is not None,
+            'services_initialized': service_registry.is_initialized(),
+            'storage_backend_type': self.settings.storage_backend,
             'timestamp': datetime.now().isoformat()
         }
 
@@ -330,10 +406,17 @@ Storage Backend: {storage_backend}
         print(f"\nServer Status:")
         print(f"  Running: {status['server_running']}")
         print(f"  PID: {status['server_pid']}")
+        if hasattr(self, 'server_url') and self.server_url:
+            print(f"  Server URL: {self.server_url}")
+            print(f"  Swagger Docs: {self.docs_url}")
+            print(f"  ReDoc: {self.redoc_url}")
         print(f"  Messaging Service: {status['messaging_service']}")
         print(f"  Scheduler Service: {status['scheduler_service']}")
         print(f"  Task Service: {status['task_service']}")
+        print(f"  Task Repository: {status['task_repo']}")
         print(f"  Storage Backend: {status['storage_backend']}")
+        print(f"  Services Initialized: {status['services_initialized']}")
+        print(f"  Storage Backend Type: {status['storage_backend_type']}")
         print(f"  Timestamp: {status['timestamp']}")
 
     async def run(self):
@@ -347,6 +430,7 @@ Storage Backend: {storage_backend}
         try:
             await self.initialize_services()
             await self.load_backups()
+            print("✅ Services initialized successfully")
         except Exception as e:
             self.logger.error(f"Failed to initialize: {e}")
             print(f"❌ Initialization failed: {e}")
