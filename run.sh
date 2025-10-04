@@ -6,14 +6,19 @@ if [ ! -f .env ]; then
   exit 1
 fi
 
-# Check for poetry
-if ! command -v poetry &> /dev/null; then
-  echo "Poetry is not installed. Please install poetry first."
-  exit 1
+# Create and activate virtualenv using uv (if missing)
+if [ ! -d ".venv" ]; then
+  echo "Creating virtual environment with uv..."
+  uv venv .venv
 fi
 
-poetry install
+echo "Activating virtual environment..."
+. .venv/bin/activate
+
+# Sync dependencies using uv
+echo "Syncing dependencies with uv..."
+uv sync || true
 
 # Run API
 echo "Starting FastAPI app..."
-poetry run uvicorn api.api:app --reload 
+python -m uvicorn api.api:app --reload

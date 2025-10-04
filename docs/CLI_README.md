@@ -5,7 +5,7 @@ This CLI interface provides an enhanced experience for running and managing the 
 ## Features
 
 - **Interactive CLI**: Beautiful command-line interface with command completion
-- **Project Building**: Automatic dependency installation with Poetry
+- **Project Building**: Automatic dependency installation with uv
 - **Server Management**: Start, stop, restart, and shutdown server
 - **Data Persistence**: Support for both file-based and Supabase storage
 - **Backup Management**: Automatic backup and restore of messages and schedules
@@ -15,7 +15,8 @@ This CLI interface provides an enhanced experience for running and managing the 
 
 1. **Install Dependencies**:
    ```bash
-   poetry install
+   uv venv .venv
+   uv sync
    ```
 
 2. **Configure Environment**:
@@ -46,9 +47,9 @@ chmod +x run_cli.sh
 ./run_cli.sh
 ```
 
-Or run directly with Poetry:
+Or run directly after activating venv:
 ```bash
-poetry run python cli_server.py
+uv python cli_server.py
 ```
 
 ### Available Commands
@@ -57,7 +58,7 @@ poetry run python cli_server.py
 |---------|-------------|
 | `help` | Show help information |
 | `status` | Show server status |
-| `build` | Build project with Poetry |
+| `build` | Build project (use `uv sync`) |
 | `start` | Start the server |
 | `restart` | Restart server with backup |
 | `shutdown` | Shutdown server with backup |
@@ -167,10 +168,8 @@ octopus> logs
 
 ### Common Issues
 
-1. **Poetry not found**:
-   ```bash
-   curl -sSL https://install.python-poetry.org | python3 -
-   ```
+1. **uv not found**:
+   Install uv according to uv docs
 
 2. **Supabase connection failed**:
    - Check your Supabase URL and key
