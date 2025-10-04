@@ -19,16 +19,18 @@ if [ ! -f .env ]; then
   exit 1
 fi
 
-# Check for poetry
-if ! command -v poetry &> /dev/null; then
-  echo "Poetry is not installed. Please install poetry first."
-  exit 1
+# Create and activate virtualenv using uv (if missing)
+if [ ! -d ".venv" ]; then
+  echo "Creating virtual environment with uv..."
+  uv venv .venv
 fi
 
-# Install dependencies
-echo "Installing dependencies..."
-poetry install
+echo "Activating virtual environment..."
+. .venv/bin/activate
 
-# Run CLI
+# Sync dependencies using uv
+echo "Syncing dependencies with uv..."
+uv sync || true
+
 echo "Starting Assistant Octopus CLI..."
-poetry run python cli_server.py
+python cli_server.py

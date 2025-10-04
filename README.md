@@ -21,7 +21,7 @@ Assistant Octopus is a personal assistant built with a supervisor agent architec
 
 ## Requirements
 Python 3.11+
-Poetry for dependency management
+Dependencies managed via `pyproject.toml` and `uv` (or pip requirements)
 Redis 6+ (for session/caching)
 Supabase (PostgreSQL 14+) for persistent storage
 Ollama (local LLM backend)
@@ -33,9 +33,13 @@ python-telegram-bot (for Telegram integration)
 git clone <repo-url>
 cd assistant-octopus
 ```
-2. Install dependencies
+2. Install dependencies (uv required)
 ```
-poetry install
+# Create virtual environment using uv
+uv venv .venv
+. .venv/bin/activate
+# Sync dependencies into the venv
+uv sync
 ```
 3. Set up enviroment variables
 Create a `.env` file with your configuration. Example of `.env` file can be found under `.env.example`

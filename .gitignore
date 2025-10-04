@@ -100,10 +100,6 @@ ipython_config.py
 #   commonly ignored for libraries.
 #uv.lock
 
-# poetry
-poetry.lock
-poetry.toml
-
 # pdm
 #   Similar to Pipfile.lock, it is generally recommended to include pdm.lock in version control.
 #   pdm recommends including project-wide configuration in pdm.toml, but excluding .pdm-python.

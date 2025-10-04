@@ -172,11 +172,11 @@ class ServerManager:
         #     self.logger.error(f"Failed to backup data: {e}")
 
     def build_project(self) -> bool:
-        """Build the project using poetry"""
+        """Build the project using uv"""
         try:
-            self.logger.info("Building project with poetry...")
+            self.logger.info("Building project with uv...")
             result = subprocess.run(
-                ['poetry', 'install'],
+                ['uv', 'sync'],
                 capture_output=True,
                 text=True,
                 cwd=os.getcwd()
@@ -202,7 +202,7 @@ class ServerManager:
             
             self.logger.info("Starting FastAPI server...")
             self.server_process = subprocess.Popen(
-                ['poetry', 'run', 'uvicorn', 'api.api:app', '--reload'],
+                ['uv', 'run', 'uvicorn', 'api.api:app', '--reload'],
                 stdout=subprocess.PIPE,
                 stderr=subprocess.STDOUT,
                 text=True,
@@ -380,7 +380,7 @@ class ServerManager:
 Available Commands:
   help      - Show this help message
   status    - Show server status
-  build     - Build project with poetry
+  build     - Build project with uv
   start     - Start the server
   restart   - Restart server with backup
   shutdown  - Shutdown server with backup
