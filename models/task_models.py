@@ -7,7 +7,7 @@ including task types, repeat intervals, and task representation.
 
 from abc import ABC, abstractmethod
 from typing import Any, Dict, Optional, List
-from dataclasses import dataclass, asdict
+from dataclasses import dataclass, asdict, field
 from datetime import datetime
 from enum import Enum
 import uuid
@@ -17,7 +17,7 @@ class TaskType(Enum):
     """Task type enumeration"""
     SCHEDULED = "scheduled"
     REPEATED = "repeated"
-
+    INSTANT = "instant"
 
 class RepeatInterval(Enum):
     """Repeat interval enumeration for recurring tasks"""
@@ -46,16 +46,16 @@ class Task:
         updated_at: Timestamp when task was last updated
     """
     id: Optional[str] = None
-    name: str = None
+    name: str = ""
     description: Optional[str] = None
-    task_type: TaskType = None
-    payload: Dict[str, Any] = None
-    scheduled_at: datetime = None
+    task_type: Optional[TaskType] = None
+    payload: Dict[str, Any] = field(default_factory=dict)
+    scheduled_at: Optional[datetime] = None
     repeat_interval: Optional[RepeatInterval] = None
     cron_expression: Optional[str] = None
     is_active: bool = True
-    created_at: datetime = None
-    updated_at: datetime = None
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
 
     def __post_init__(self):
         """Initialize default values after object creation"""

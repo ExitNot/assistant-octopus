@@ -7,7 +7,7 @@ including job status tracking, priority levels, and message handling.
 
 from abc import ABC, abstractmethod
 from typing import Any, Dict, Optional, List
-from dataclasses import dataclass, asdict
+from dataclasses import dataclass, asdict, field
 from datetime import datetime
 from enum import Enum
 import uuid
@@ -52,11 +52,11 @@ class Job:
         metadata: Additional job metadata
     """
     id: Optional[str] = None
-    type: str = None
-    payload: Dict[str, Any] = None
+    type: Optional[str] = None
+    payload: Dict[str, Any] = field(default_factory=dict)
     priority: JobPriority = JobPriority.NORMAL
     status: JobStatus = JobStatus.PENDING
-    created_at: datetime = None
+    created_at: Optional[datetime] = None
     scheduled_at: Optional[datetime] = None
     started_at: Optional[datetime] = None
     completed_at: Optional[datetime] = None
@@ -143,8 +143,8 @@ class Message:
         correlation_id: Optional correlation ID for tracking
     """
     type: str
-    payload: Dict[str, Any]
-    timestamp: datetime = None
+    payload: Dict[str, Any] = field(default_factory=dict)
+    timestamp: Optional[datetime] = None
     correlation_id: Optional[str] = None
 
     def __post_init__(self):
